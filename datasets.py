@@ -14,6 +14,10 @@ from torchvision.datasets.folder import ImageFolder, default_loader
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data import create_transform
 
+from torch.utils.data import Dataset,DataLoader
+import numpy as np
+import pickle as pkl
+import torch
 
 class INatDataset(ImageFolder):
     def __init__(self, root, train=True, year=2018, transform=None, target_transform=None,
@@ -80,8 +84,53 @@ def build_dataset(is_train, args):
                               category=args.inat_category, transform=transform)
         nb_classes = dataset.nb_classes
 
+    elif args.data_set == 'MIMIC': ###########################################################
+        if is_train == 'train' : 
+            X_path = os.path.join(args.data_path, 'X_train.npy')
+            X = np.load(X_path, allow_pickle=True)
+
+            y_path = os.path.join(args.data_path, 'y_train.pickle')
+            y = open(y_path,'rb')
+            y = pkl.load(y)
+
+        else :
+            X_path = os.path.join(args.data_path, 'X_val.npy')
+            X = np.load(X_path, allow_pickle=True)
+
+            y_path = os.path.join(args.data_path, 'y_val.pickle')
+            y = open(y_path,'rb')
+            y = pkl.load(y)
+
+        dataset = CXR_dataset(X, y)
+        nb_classes = 15
+
     return dataset, nb_classes
 
+class CXR_dataset(Dataset):
+    def __init__(self, data, label_dict):
+        super(CXR_dataset, self).__init__()
+        self.data = data
+        self.len = len(data)
+        self.label_dict = label_dict
+
+    def __len__(self):
+        return self.len
+
+    def __getitem__(self, idx) :
+        X,study_id = self.data[idx]
+        X = torch.from_numpy(X).unsqueeze(0).type(torch.FloatTensor)
+        X = X.repeat(3,1,1)
+
+        y = torch.from_numpy(self.label_dict[study_id]).type(torch.FloatTensor)
+        # print("original y ", y)
+        y = np.where(np.array(y) == 1)[0]
+
+        if len(y) == 0 :
+            y = int(14)
+        else : 
+            y = y[0]
+        # print("index  : ", y)
+        return X, y
 
 def build_transform(is_train, args):
     resize_im = args.input_size > 32

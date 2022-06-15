@@ -106,6 +106,7 @@ def evaluate(data_loader, model, device, world_size, distributed=True, amp=False
     num_data = len(data_loader.dataset)
     outputs = torch.cat(outputs, dim=0)
     targets = torch.cat(targets, dim=0)
+    # outputs = torch.sigmoid(outputs)
     real_acc1, real_acc5 = accuracy(outputs[:num_data], targets[:num_data], topk=(1, 5))
     real_loss = criterion(outputs, targets)
     metric_logger.update(loss=real_loss.item())

@@ -103,7 +103,7 @@ def build_dataset(is_train, args):
             y = pkl.load(y)
 
         dataset = CXR_dataset(X, y)
-        nb_classes = 15
+        nb_classes = 14
 
     return dataset, nb_classes
 
@@ -125,9 +125,10 @@ class CXR_dataset(Dataset):
         y = torch.from_numpy(self.label_dict[study_id]).type(torch.FloatTensor)
         # print("original y ", y)
         y = np.where(np.array(y) == 1)[0]
+        # y = np.where(np.array(y) == 1)
 
         if len(y) == 0 :
-            y = int(14)
+            y = int(13)
         else : 
             y = y[0]
         # print("index  : ", y)
